@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petri Dish Simulation</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden;}
+        canvas { display: block; }
+        /* 버튼 스타일 (필요하다면 추가) */
+        button {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10; /* 캔버스 위에 버튼 배치 */
+
+        }
+
+        #button-container{
+           position: absolute; /* 절대 위치 */
+           bottom: 10px;      /* 아래쪽 여백 */
+           left: 50%;          /* 수평 중앙 정렬 */
+           transform: translateX(-50%); /* 수평 중앙 정렬 */
+           display: flex; /* 버튼 가로 정렬 */
+           gap: 10px;      /* 버튼 사이 간격 */
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <div id="button-container">
+    </div>
+
+    <script>
+        // --- p5.js 코드 (PC용, 모바일용 통합) ---
+
+        let drawingPoints = [];
+        let cultivating = false;
+        let drawingRadius;
+        let borderSize;
+        let cultivateButton;
+        let disposeButton;
+        let colonies = [];
+
+        // Colors
+        let innerCircleColor;
+        let canvasBackgroundColor;
+        let nonDrawableAreaColor;
+        let colonyColor;
+        let colorTransitionComplete = false;
+
+        // Flash effect variables
+        let flashBrightness = 0;
+        const flashDuration = 500;
+        let flashStartTime;
+
+        function setup() {
+          createCanvas(480, 480, WEBGL);
+          drawingRadius = 200;
+          borderSize = 220 * 2;
+          pixelDensity(1); // Prevent unwanted scaling.
+
+          innerCircleColor = color(210, 210, 200);
+          canvasBackgroundColor = color(25);
+          nonDrawableAreaColor = color(150, 150, 150);
+          colonyColor = color(255);
+
+         // Button Setup (버튼 생성은 여기서 한 번만)
+          cultivateButton = createButton('Cultivate!');
+          disposeButton = createButton('Dispose?');
+          cultivateButton.mousePressed(startCultivation);
+          disposeButton.mousePressed(resetCanvas);
+
+
+        //버튼 컨테이너에 버튼 추가.
+         let buttonContainer = select('#button-container'); // div 찾기
+         cultivateButton.parent(buttonContainer);       //   버튼의 부모 설정
+         disposeButton.parent(buttonContainer);
+
+          draw();  // Initial draw call
+
+        }
+
+        function draw() {
+          background(canvasBackgroundColor);
+          draw2DBorder();
+
+           if (!cultivating) {
+             drawLines();
+           }
+            if (cultivating) {
+              simulateColonyGrowth();
+            }
+
+        }
+
+
+         function windowResized() {
+             // Adjust the size according to the current aspect ratio
+
+              let aspectRatio = 1; // 1:1
+
+             //If current display (considering width, height) is wider than canvas ratio, height limits the size
+             if (windowWidth / windowHeight > aspectRatio){ // window wider than 1:1
+
+                newHeight = windowHeight * 0.7; //   New height -> limit size
+                newWidth = newHeight * aspectRatio;
+                }
+
+            // Height doesn't limit the canvas
+            else {
+               newWidth = windowWidth * 0.7
+               newHeight = newWidth / aspectRatio
+
+            }
+            resizeCanvas(newWidth, newHeight);
+
+        }
+
+        // --- Mouse Events (for desktop) ---
+
+        function mousePressed() {
+            if(isTouchDevice()) return; // On desktop.
+          startDrawingSegment(mouseX, mouseY);
+        }
+
+        function mouseDragged() {
+           if (isTouchDevice()) return;  // On desktop
+          continueDrawingSegment(mouseX, mouseY, pmouseX, pmouseY);
+
+        }
+
+        // --- Touch Events (for mobile/tablet) ---
+
+        function touchStarted() {
+            // console.log("TOUCH STARTED");
+            startDrawingSegment(touches[0].x, touches[0].y);
+            return false; // Prevent default browser behavior
+        }
+
+
+        function touchMoved() {
+
+            continueDrawingSegment(touches[0].x, touches[0].y, touches[0].px, touches[0].py); //Single touch
+
+          return false; // Prevent default browser behavior (like scrolling)
+        }
+
+        // --- Shared Drawing Logic ---
+        function startDrawingSegment(x,y){
+            let adjustedX = x - width/2;
+            let adjustedY = y - height/2;
+            if (!cultivating && dist(adjustedX, adjustedY, 0, 0) <= drawingRadius){
+             drawingPoints.push([]);
+            }
+        }
+
+        function continueDrawingSegment(x,y,px,py)
+        {
+
+           if (!cultivating) {
+
+             let adjustedX = x- width/2;
+             let adjustedY = y-height/2;
+
+            if (dist(adjustedX, adjustedY, 0, 0) <= drawingRadius) { //Check
+
+                if(drawingPoints.length > 0){
+
+                   let currentSegment = drawingPoints[drawingPoints.length -1];
+                    currentSegment.push({x:adjustedX, y:adjustedY});
+
+                    //Line Draw
+                   push();
+                    translate(-width/2, -height/2);
+                    stroke(100);
+                    strokeWeight(5);
+                    line(px,py, x, y); //2d line.
+                    pop();
+                   }
+
+            }
+
+          }
+        }
+
+        function drawLines(){
+          if(drawingPoints.length > 0){
+
+            push();
+            translate(-width/2,-height/2) //Translate back for 2d drawing
+            stroke(100);
+            strokeWeight(5);
+
+            for (let segment of drawingPoints){
+
+                for (let i = 0; i < segment.length - 1; i++){
+
+                  let p1 = segment[i];
+                  let p2 = segment[i+1];
+                   line(p1.x + width/2, p1.y+height/2, p2.x+width/2,p2.y+height/2) // 2d.
+
+                 }
+
+             }
+
+          pop(); // Restore.
+         }
+
+       }
+
+        function startCultivation() {
+            // console.log("START CULTIVATION CALLED");
+
+           cultivating = true;
+           cultivateButton.attribute('disabled', '');
+
+            //Initialize colonies
+            colonies = []; //Clear
+            for (let segment of drawingPoints){
+
+              for (let p of segment){
+
+                let numColonies = floor(random(5, 15)); //  Random,
+                for (let i = 0; i< numColonies; i++){
+                    let xOffset = random(-5, 5); // random offset, centered
+                    let yOffset = random(-5,5);
+
+                    let newX = p.x + xOffset;
+                    let newY = p.y + yOffset;
+
+                     //
+                      if (dist(newX,newY, 0, 0) <= drawingRadius){
+
+                         let maxSize = random(2,6);
+                          colonies.push({
+
+                            x:newX,
+                            y: newY,
+                            z: 0, // Z index 0
+                            size:0, //Size,
+                            maxSize: maxSize,
+                            growthRate: random(0.05, 0.15), //
+                            height: random(5, 15), //   Height colony (z).
+                            color:color(255), //   white.
+
+                         })
+
+                       }
+                 }
+               }
+
+            }
+
+             colorTransitionComplete = false; //Reset.
+             frameCount = 0;
+        }
+
+
+        function simulateColonyGrowth() {
+
+          if (!colorTransitionComplete) {
+            colonyColor = lerpColor(color(255), color(255, 255, 150), frameCount / 100.0);
+            if (frameCount >= 100) { // Frame reached
+             colorTransitionComplete = true;
+           }
+          }
+              // 3D colony render
+
+            ambientLight(60);  // Soft white ambient light.
+            directionalLight(255, 255, 255, 0, 0, -1); // Light comes from the top
+              noStroke();
+             for (let colony of colonies) {
+
+              let c = color(red(colonyColor), green(colonyColor), blue(colonyColor), 200); //Color + alpha
+              ambientMaterial(c);
+
+            if (colony.size < colony.maxSize) {
+
+              colony.size += colony.growthRate;
+           }
+
+          //Webgl Rendering
+           push();
+          translate(colony.x, colony.y, colony.z);  // Colony render.
+           sphere(colony.size / 2, 24, 24);          // z
+            pop(); // Restore.
+           }
+       }
+
+        function resetCanvas() {
+
+          cultivating = false; // Deactivate flags, clear,
+            drawingPoints = []; //clear all points
+          colonies = [];
+          colorTransitionComplete = false;
+          frameCount = 0;
+          cultivateButton.removeAttribute('disabled'); // Enables again
+
+            // Make Flash!
+            flashBrightness = 255; //Start
+             flashStartTime = millis(); // Time
+       }
+
+
+        function draw2DBorder() {
+             push();
+            translate(-width / 2, -height / 2);  // Translate for drawing, because this will be drawn in "2d".
+
+
+              // 1. Outter, non drawable area
+            noStroke();
+             fill(nonDrawableAreaColor);
+            ellipse(width / 2, height / 2, borderSize, borderSize); // outter
+
+
+            // --- Inner Circle  Drawing + Flash Effect ----
+            // 2. Check flash (the same, )
+            let elapsedTime = millis() - flashStartTime;
+            if(elapsedTime < flashDuration){ // flash active
+
+             flashBrightness = int(map(elapsedTime, 0, flashDuration, 255, 0));
+               noStroke();
+                fill(255,255,255, flashBrightness);
+
+             }
+            else{ //Normal fill
+
+             noStroke();
+             fill(innerCircleColor);
+
+             }
+            ellipse(width / 2, height / 2, drawingRadius * 2, drawingRadius * 2); //draw petri dish
+
+           //3.  Border
+             let borderColorStart = color(200, 230, 255, 60);
+              let borderColorEnd = color(200, 230, 255, 0);
+              // Draws lines getting larger (with fading color, border effect)
+           for (let r = borderSize / 2; r <= borderSize / 2 + 5; r++){ //Increments
+
+                 let inter = map(r, borderSize / 2, borderSize / 2 + 5, 0, 1); //smooth.
+                 let c = lerpColor(borderColorStart, borderColorEnd, inter);
+                  noFill();
+                 stroke(c)
+                strokeWeight(1);
+
+                  ellipse(width / 2, height / 2, r * 2, r * 2);  //Increments
+              }
+
+              pop();
+       }
+
+
+
+        // 터치 장치 감지 함수
+        function isTouchDevice() {
+            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+        }
+
+
+        windowResized();
+
+    </script>
+</body>
+</html>

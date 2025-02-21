@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zoning-out.archive</title>
+    <style>
+        /* 기본 스타일 */
+        body {
+            font-family: serif;
+            background-color: #f7f7f7; /* 97% 밝은 흰색 */
+            color: #333; /* 가독성을 위한 약간 어두운 글자색 */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 중앙 정렬 */
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 0.5em;
+            text-align: center; /* 제목 중앙 정렬 */
+        }
+
+        h2 {
+           font-size: 1em;
+           font-weight: lighter;
+           margin-bottom: 2em;
+           color: #777; /* 부제목 (사이트 설명) 색상 */
+           text-align: center; /* 부제목 중앙 정렬 */
+        }
+
+        /* 작품 컨테이너 스타일 */
+        .project-container {
+            width: 80%; /* 반응형 위해 너비 조정 */
+            max-width: 800px; /* 최대 너비 제한 */
+            margin-bottom: 2em;
+            padding: 1em;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+              display: flex;
+              flex-direction: column;
+
+        }
+
+        /* 반응형 iframe 스타일 */
+        .project-iframe-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 비율, 필요에 따라 조정 */
+        }
+
+          .project-iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none; /* 테두리 제거 */
+
+        }
+
+        /* 작품 제목 스타일 */
+        .project-title {
+            font-size: 1.5em;
+            margin-top: 0.5em;
+            margin-bottom: 0.3em;
+            text-align: center; /* 작품 제목 중앙 정렬 */
+        }
+
+        /* 작품 설명 스타일 */
+        .project-description {
+            color: #666;
+            margin-bottom: 1em;
+            text-align: center;
+
+        }
+
+      /* 버튼 스타일 */
+      .button {
+        display: inline-block; /* 인라인 블록으로 변경 */
+        background-color: black;
+        color: white;
+        padding: 0.5em 1em;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 0 auto;       
+        text-align: center; /* 텍스트 가운데 정렬 */    
+      }
+
+
+    </style>
+</head>
+<body>
+    <h1>zoning-out.archive</h1>
+    <h2>raw sugarish thoughts</h2>
+
+    <!-- 작품 1 -->
+    <div class="project-container">
+      <div class="project-iframe-container">
+
+          <iframe class="project-iframe" src="project1.html"  scrolling="no"></iframe>
+      </div>
+        <h3 class="project-title">작품 제목 1</h3>
+        <p class="project-description">작품 설명 1</p>
+        <a href="project1.html" class="button">View Full Screen</a>
+
+    </div>
+
+    <!-- 작품 2 (예시) -->
+    <div class="project-container">
+    <div class="project-iframe-container">
+        <iframe class="project-iframe" src="project2.html"  scrolling="no"></iframe>
+    </div>
+        <h3 class="project-title">작품 제목 2</h3>
+        <p class="project-description">작품 설명 2</p>
+          <a href="project2.html" class="button">View Full Screen</a>
+
+    </div>
+
+    <!-- 추가 작품은 위와 같은 형식으로 계속 추가 -->
+
+    <script>
+      // 모든 iframe 요소들을 가져옴
+      var iframes = document.querySelectorAll('.project-iframe');
+
+      // 각 iframe에 대해 load 이벤트 리스너를 추가
+      iframes.forEach(function(iframe) {
+        iframe.addEventListener('load', function() {
+          // iframe 내부의 document에 접근
+          var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+          // iframe 내부의 body 높이를 가져옴
+          var bodyHeight = iframeDoc.body.scrollHeight;
+
+          // iframe의 높이를 body 높이로 설정
+          iframe.style.height = bodyHeight + 'px';
+
+          console.log(bodyHeight);
+        });
+      });
+    </script>
+</body>
+</html>

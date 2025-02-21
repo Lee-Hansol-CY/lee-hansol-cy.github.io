@@ -6,14 +6,25 @@
     <title>Petri Dish Simulation</title>
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden;}
-        canvas { display: block; }
+       body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;           /* 추가: Flexbox 레이아웃 */
+            justify-content: center; /* 추가: 수평 중앙 정렬 */
+            align-items: center;     /* 추가: 수직 중앙 정렬 */
+            min-height: 100vh;        /* 추가: 뷰포트 높이만큼 최소 높이 설정 */
+        }
+        canvas {
+            display: block;
+        }
+
+
         /* 버튼 스타일 (필요하다면 추가) */
         button {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10; /* 캔버스 위에 버튼 배치 */
+            /* padding, background-color, color, border, border-radius 등 추가 스타일 */
+              padding: 0.5em 1em;
+             border-radius: 5px;
 
         }
 
@@ -24,20 +35,19 @@
            transform: translateX(-50%); /* 수평 중앙 정렬 */
            display: flex; /* 버튼 가로 정렬 */
            gap: 10px;      /* 버튼 사이 간격 */
+            z-index: 10; /* 캔버스 위에 버튼 배치 */
         }
 
 
     </style>
 </head>
 <body>
-
-    <div id="button-container">
-    </div>
-
+  <div id = "button-container">
+  </div>
     <script>
-        // --- p5.js 코드 (PC용, 모바일용 통합) ---
+    // --- p5.js 코드 ---
 
-        let drawingPoints = [];
+    let drawingPoints = [];
         let cultivating = false;
         let drawingRadius;
         let borderSize;
@@ -57,37 +67,47 @@
         const flashDuration = 500;
         let flashStartTime;
 
-        function setup() {
-          createCanvas(480, 480, WEBGL);
+      function setup() {
+        createCanvas(480, 480, WEBGL);
+        // createCanvas(windowWidth, windowHeight, WEBGL); // Full Window
+
           drawingRadius = 200;
           borderSize = 220 * 2;
-          pixelDensity(1); // Prevent unwanted scaling.
 
-          innerCircleColor = color(210, 210, 200);
+           innerCircleColor = color(210, 210, 200);
           canvasBackgroundColor = color(25);
           nonDrawableAreaColor = color(150, 150, 150);
           colonyColor = color(255);
 
-         // Button Setup (버튼 생성은 여기서 한 번만)
-          cultivateButton = createButton('Cultivate!');
-          disposeButton = createButton('Dispose?');
-          cultivateButton.mousePressed(startCultivation);
+          pixelDensity(1);
+
+
+        // Button Setup (버튼 생성은 여기서 한 번만)
+        cultivateButton = createButton('Cultivate!');
+        disposeButton = createButton('Dispose?');
+
+         //  이벤트 핸들러 연결 (여기서 한 번만)
+         cultivateButton.mousePressed(startCultivation);
           disposeButton.mousePressed(resetCanvas);
 
 
+
         //버튼 컨테이너에 버튼 추가.
-         let buttonContainer = select('#button-container'); // div 찾기
-         cultivateButton.parent(buttonContainer);       //   버튼의 부모 설정
-         disposeButton.parent(buttonContainer);
+        let buttonContainer = select('#button-container'); // div 찾기
+        cultivateButton.parent(buttonContainer);       //   버튼의 부모 설정
+        disposeButton.parent(buttonContainer);
 
-          draw();  // Initial draw call
 
-        }
+         draw();
+
+      }
+
+
 
         function draw() {
           background(canvasBackgroundColor);
-          draw2DBorder();
 
+           draw2DBorder();
            if (!cultivating) {
              drawLines();
            }
@@ -98,271 +118,328 @@
         }
 
 
-         function windowResized() {
+
+       function windowResized() {
+
              // Adjust the size according to the current aspect ratio
+            // Initial, let's assume canvas has to fill all the height, keeping 1:1 ratio
+
+            //   let newWidth = windowWidth; // Assume canvas will have full height
+            //  let newHeight = windowHeight;
+            //If new Height * original Aspect ratio > new Width, that height has to be trimmed
 
               let aspectRatio = 1; // 1:1
 
-             //If current display (considering width, height) is wider than canvas ratio, height limits the size
-             if (windowWidth / windowHeight > aspectRatio){ // window wider than 1:1
+              if (windowWidth / windowHeight > aspectRatio){ // window is "wider"
 
-                newHeight = windowHeight * 0.7; //   New height -> limit size
+                newHeight = windowHeight * 0.7; //70 % Viewport
                 newWidth = newHeight * aspectRatio;
                 }
 
-            // Height doesn't limit the canvas
-            else {
-               newWidth = windowWidth * 0.7
-               newHeight = newWidth / aspectRatio
+               else {
+                //
+                 newWidth = windowWidth * 0.7
+                 newHeight = newWidth / aspectRatio
 
-            }
-            resizeCanvas(newWidth, newHeight);
+                }
+
+                resizeCanvas(newWidth, newHeight);
+
 
         }
-
-        // --- Mouse Events (for desktop) ---
-
-        function mousePressed() {
-            if(isTouchDevice()) return; // On desktop.
-          startDrawingSegment(mouseX, mouseY);
-        }
-
-        function mouseDragged() {
-           if (isTouchDevice()) return;  // On desktop
-          continueDrawingSegment(mouseX, mouseY, pmouseX, pmouseY);
-
-        }
-
-        // --- Touch Events (for mobile/tablet) ---
-
-        function touchStarted() {
-            // console.log("TOUCH STARTED");
-            startDrawingSegment(touches[0].x, touches[0].y);
-            return false; // Prevent default browser behavior
-        }
+      function startDrawingSegment(x,y){
 
 
-        function touchMoved() {
-
-            continueDrawingSegment(touches[0].x, touches[0].y, touches[0].px, touches[0].py); //Single touch
-
-          return false; // Prevent default browser behavior (like scrolling)
-        }
-
-        // --- Shared Drawing Logic ---
-        function startDrawingSegment(x,y){
-            let adjustedX = x - width/2;
+        let adjustedX = x - width/2;
             let adjustedY = y - height/2;
-            if (!cultivating && dist(adjustedX, adjustedY, 0, 0) <= drawingRadius){
-             drawingPoints.push([]);
-            }
-        }
 
-        function continueDrawingSegment(x,y,px,py)
-        {
+          if (!cultivating && dist(adjustedX, adjustedY, 0, 0) <= drawingRadius){
+           drawingPoints.push([]);
+
+            }
+         }
+       function continueDrawingSegment(x,y,px,py)
+       {
 
            if (!cultivating) {
 
-             let adjustedX = x- width/2;
-             let adjustedY = y-height/2;
+              let adjustedX = x- width/2;
+              let adjustedY = y-height/2;
+              if (dist(adjustedX, adjustedY, 0, 0) <= drawingRadius) {
+                 if(drawingPoints.length > 0){
+                  let currentSegment = drawingPoints[drawingPoints.length -1];
+                  currentSegment.push({x:adjustedX, y:adjustedY});
 
-            if (dist(adjustedX, adjustedY, 0, 0) <= drawingRadius) { //Check
+                 push();
+                  translate(-width/2, -height/2);
+                 stroke(100);
+                 strokeWeight(5);
 
-                if(drawingPoints.length > 0){
+                line(px,py, x, y); //2d line.
 
-                   let currentSegment = drawingPoints[drawingPoints.length -1];
-                    currentSegment.push({x:adjustedX, y:adjustedY});
+                pop(); //
+               }
 
-                    //Line Draw
-                   push();
-                    translate(-width/2, -height/2);
-                    stroke(100);
-                    strokeWeight(5);
-                    line(px,py, x, y); //2d line.
-                    pop();
-                   }
-
-            }
+              }
 
           }
-        }
-
-        function drawLines(){
-          if(drawingPoints.length > 0){
-
-            push();
-            translate(-width/2,-height/2) //Translate back for 2d drawing
-            stroke(100);
-            strokeWeight(5);
-
-            for (let segment of drawingPoints){
-
-                for (let i = 0; i < segment.length - 1; i++){
-
-                  let p1 = segment[i];
-                  let p2 = segment[i+1];
-                   line(p1.x + width/2, p1.y+height/2, p2.x+width/2,p2.y+height/2) // 2d.
-
-                 }
-
-             }
-
-          pop(); // Restore.
-         }
 
        }
 
-        function startCultivation() {
-            // console.log("START CULTIVATION CALLED");
 
-           cultivating = true;
-           cultivateButton.attribute('disabled', '');
+        function mousePressed() {
 
-            //Initialize colonies
-            colonies = []; //Clear
-            for (let segment of drawingPoints){
+           if(isTouchDevice()) return; // Only on Desktop
+            startDrawingSegment(mouseX, mouseY); // Only desktop, use the
 
-              for (let p of segment){
-
-                let numColonies = floor(random(5, 15)); //  Random,
-                for (let i = 0; i< numColonies; i++){
-                    let xOffset = random(-5, 5); // random offset, centered
-                    let yOffset = random(-5,5);
-
-                    let newX = p.x + xOffset;
-                    let newY = p.y + yOffset;
-
-                     //
-                      if (dist(newX,newY, 0, 0) <= drawingRadius){
-
-                         let maxSize = random(2,6);
-                          colonies.push({
-
-                            x:newX,
-                            y: newY,
-                            z: 0, // Z index 0
-                            size:0, //Size,
-                            maxSize: maxSize,
-                            growthRate: random(0.05, 0.15), //
-                            height: random(5, 15), //   Height colony (z).
-                            color:color(255), //   white.
-
-                         })
-
-                       }
-                 }
-               }
-
-            }
-
-             colorTransitionComplete = false; //Reset.
-             frameCount = 0;
         }
+
+
+        function mouseDragged() {
+           if (isTouchDevice()) return; // Only on Desktop
+            continueDrawingSegment(mouseX, mouseY, pmouseX, pmouseY);
+
+        }
+       // Touch Events, use Touch coordinates
+       //
+       function touchStarted() {
+         //
+        startDrawingSegment(touches[0].x, touches[0].y);
+
+         return false;
+      }
+     function touchMoved() {
+         continueDrawingSegment(touches[0].x, touches[0].y, touches[0].px, touches[0].py); //Use current X, current Y, but also needs Prev X, Prev Y to do line(px, py, x, y).
+
+         return false;
+       }
+
+
+
+       function startCultivation() {
+        cultivating = true;
+          cultivateButton.attribute('disabled', '');
+         colonies = []; //Clear prev
+
+            //Drawing, let´s do colony growing...
+
+          for (let segment of drawingPoints){
+           for (let p of segment){
+
+            let numColonies = floor(random(5, 15)); // number
+
+            for (let i = 0; i< numColonies; i++){ // loop
+                let xOffset = random(-5, 5); // random offset.
+                let yOffset = random(-5,5);
+
+                let newX = p.x + xOffset; //  new coords for colonies, slight variation from current x, y;
+                let newY = p.y + yOffset;
+                //console.log(newX, newY);
+                 //Check inside drawingArea;
+                 //
+
+                  if (dist(newX,newY, 0, 0) <= drawingRadius){
+
+                    //   console.log("created!");
+                    let maxSize = random(2,6);
+
+                      colonies.push({ // colony
+                        x:newX, //colonyX
+                        y: newY,
+                        z: 0,
+                        size:0,
+                        maxSize: maxSize,
+                        growthRate: random(0.05, 0.15), //
+                        // colonyShape: int(random(0,2)),
+                         height: random(5, 15), // Randomize the heights
+						 color:color(255),
+                         // height:5, //test height 5
+
+                     })
+                   }
+               }
+              }
+           }
+
+           colorTransitionComplete = false; //Reset.
+          frameCount = 0; // Reset time
+
+       }
 
 
         function simulateColonyGrowth() {
 
-          if (!colorTransitionComplete) {
-            colonyColor = lerpColor(color(255), color(255, 255, 150), frameCount / 100.0);
-            if (frameCount >= 100) { // Frame reached
-             colorTransitionComplete = true;
-           }
-          }
-              // 3D colony render
+        if (!colorTransitionComplete) { //Color transition
 
-            ambientLight(60);  // Soft white ambient light.
-            directionalLight(255, 255, 255, 0, 0, -1); // Light comes from the top
+          //let colonyTargetColor = color(192, 192, 192); // Gray,
+           //  let colonyTargetColor = color(141, 255, 199);
+         // let colonyTargetColor = color(136, 203, 255);  // Original good.
+            colonyColor = lerpColor(color(255), color(255, 255, 150), frameCount / 100.0); //  color 1 to color 2
+
+              if (frameCount >= 100) { // time reached
+                 colorTransitionComplete = true;
+                  }
+             }
+          //Light
+              //
+            // --- LIGHTS SETUP: BEGIN ---
+            // 3d
+              ambientLight(60);  //   white ambient light.
+              directionalLight(255, 255, 255, 0, 0, -1);
               noStroke();
-             for (let colony of colonies) {
 
-              let c = color(red(colonyColor), green(colonyColor), blue(colonyColor), 200); //Color + alpha
-              ambientMaterial(c);
+              for (let colony of colonies) {
 
-            if (colony.size < colony.maxSize) {
+              let c = color(red(colonyColor), green(colonyColor), blue(colonyColor), 200); // Alpha
+                ambientMaterial(c);
 
-              colony.size += colony.growthRate;
+             if (colony.size < colony.maxSize) { //Still growing
+
+              colony.size += colony.growthRate; // If it is still growing
+
+              }
+               //WebGl Render (3D render)
+
+                 push();  //
+                 //
+
+               translate(colony.x, colony.y, colony.z);  // Colony z.
+                sphere(colony.size / 2, 24, 24);      //   Webgl 3D Sphere.
+               // ellipse(0,0, colony.size, colony.size);
+                pop(); //
+
+               }
+
+         }
+
+
+        function drawLines(){
+
+
+          if(drawingPoints.length > 0){
+
+             push();
+             translate(-width/2,-height/2) //Temp
+            stroke(100); //Set stroke
+           strokeWeight(5);
+            // segment... of Point[x,y].... of Point[x,y]...
+
+          for (let segment of drawingPoints){
+                // p1-- p2
+              //  line(segment[i].x, segment[i].y, segment[i+1].x, segment[i+1].y);
+
+              for (let i = 0; i < segment.length - 1; i++){
+
+                  let p1 = segment[i];
+                 let p2 = segment[i+1];
+                 line(p1.x + width/2, p1.y+height/2, p2.x+width/2,p2.y+height/2) // 2d.
+
+              }
+              //ellipse(segment[0].x, segment[0].y, 5,5);
+
+             }
+
+              pop(); // Restore matrix.
+
            }
 
-          //Webgl Rendering
-           push();
-          translate(colony.x, colony.y, colony.z);  // Colony render.
-           sphere(colony.size / 2, 24, 24);          // z
-            pop(); // Restore.
-           }
-       }
+        }
 
         function resetCanvas() {
 
-          cultivating = false; // Deactivate flags, clear,
-            drawingPoints = []; //clear all points
-          colonies = [];
-          colorTransitionComplete = false;
-          frameCount = 0;
-          cultivateButton.removeAttribute('disabled'); // Enables again
+            // console.log("RESET CALLED");
 
-            // Make Flash!
-            flashBrightness = 255; //Start
-             flashStartTime = millis(); // Time
+          cultivating = false; // DEactivate
+
+            //
+
+            drawingPoints = []; //Reset
+          colonies = [];
+           colorTransitionComplete = false;
+           frameCount = 0;
+
+             cultivateButton.removeAttribute('disabled');
+
+           //
+
+            // Set up the flash effect
+
+          flashBrightness = 255;
+           flashStartTime = millis();
        }
 
 
         function draw2DBorder() {
-             push();
-            translate(-width / 2, -height / 2);  // Translate for drawing, because this will be drawn in "2d".
+
+         push(); //Matrix isolated,
+        translate(-width / 2, -height / 2);
+
+        // Draw the border, 2D
+        // 1. Gray non draw are
+          noStroke();
+          fill(nonDrawableAreaColor); // outter
+        ellipse(width / 2, height / 2, borderSize, borderSize);
 
 
-              // 1. Outter, non drawable area
-            noStroke();
-             fill(nonDrawableAreaColor);
-            ellipse(width / 2, height / 2, borderSize, borderSize); // outter
+        //Check Flash effect:
+         // --- Inner Circle (with FLASH effect) ---
 
+            // Check if the flash is active
+            //
 
-            // --- Inner Circle  Drawing + Flash Effect ----
-            // 2. Check flash (the same, )
-            let elapsedTime = millis() - flashStartTime;
-            if(elapsedTime < flashDuration){ // flash active
+          let elapsedTime = millis() - flashStartTime;
+          //IF time not done
+           if(elapsedTime < flashDuration){ //
 
              flashBrightness = int(map(elapsedTime, 0, flashDuration, 255, 0));
-               noStroke();
-                fill(255,255,255, flashBrightness);
+               //console.log(flashBrightness);
 
-             }
-            else{ //Normal fill
+              noStroke(); //
+                fill(255,255,255, flashBrightness); // Alpha controlled
+            }
 
-             noStroke();
-             fill(innerCircleColor);
+           else{ // Normal
 
-             }
+              noStroke();
+
+               fill(innerCircleColor);
+
+               }
+
+            // console.log(flashBrightness)
+
             ellipse(width / 2, height / 2, drawingRadius * 2, drawingRadius * 2); //draw petri dish
+            // ellipse(width / 2 , height/2, 5, 5);
 
-           //3.  Border
-             let borderColorStart = color(200, 230, 255, 60);
-              let borderColorEnd = color(200, 230, 255, 0);
-              // Draws lines getting larger (with fading color, border effect)
-           for (let r = borderSize / 2; r <= borderSize / 2 + 5; r++){ //Increments
+          //Border:
 
-                 let inter = map(r, borderSize / 2, borderSize / 2 + 5, 0, 1); //smooth.
-                 let c = lerpColor(borderColorStart, borderColorEnd, inter);
-                  noFill();
-                 stroke(c)
-                strokeWeight(1);
+           let borderColorStart = color(200, 230, 255, 60); // Blue
+           let borderColorEnd = color(200, 230, 255, 0);   // Transp
+          //Creates borderLines:
+        for (let r = borderSize / 2; r <= borderSize / 2 + 5; r++){ //radius increase
+            // Map, r goes [size/2 -> (size /2 +5)] and we remap to [0 - 1],
+              //so inter result 0 to 1.
 
-                  ellipse(width / 2, height / 2, r * 2, r * 2);  //Increments
+              let inter = map(r, borderSize / 2, borderSize / 2 + 5, 0, 1); //
+            // Get color. (we get alpha);
+            let c = lerpColor(borderColorStart, borderColorEnd, inter);
+                //Draw Line
+              noFill();
+
+                stroke(c)
+              strokeWeight(1);
+
+               ellipse(width / 2, height / 2, r * 2, r * 2);
               }
 
-              pop();
-       }
+            pop();
+         }
 
-
-
-        // 터치 장치 감지 함수
-        function isTouchDevice() {
+          function isTouchDevice() {
             return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
-        }
-
-
-        windowResized();
-
+          }
+          windowResized();
     </script>
 </body>
+</html>
 </html>

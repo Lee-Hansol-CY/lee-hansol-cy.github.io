@@ -31,28 +31,29 @@
            text-align: center; /* 부제목 중앙 정렬 */
         }
 
-        /* 작품 컨테이너 스타일 */
+        /* 작품 컨테이너 스타일 (수정) */
         .project-container {
             width: 80%; /* 반응형 위해 너비 조정 */
             max-width: 800px; /* 최대 너비 제한 */
             margin-bottom: 2em;
             padding: 1em;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+            /*background-color: white;  액자 효과 제거 */
+            /*border-radius: 10px;      액자 효과 제거 */
+            /*box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);  그림자 제거 */
               display: flex;
               flex-direction: column;
 
         }
 
-        /* 반응형 iframe 스타일 */
-        .project-iframe-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 비율, 필요에 따라 조정 */
-        }
 
-          .project-iframe {
+        /* 반응형 iframe 스타일 (수정: a 태그로 감싸기 위해 컨테이너 추가) */
+        .project-link-container {
+          position: relative; /* a 태그에 position relative 추가 */
+          width: 100%; /* 너비 조정 */
+            padding-bottom: 56.25%; /* 16:9 비율 */
+            display: block; /* a 태그를 블록 레벨 요소로 */
+          }
+        .project-iframe {
             position: absolute;
             top: 0;
             left: 0;
@@ -62,10 +63,11 @@
 
         }
 
+
         /* 작품 제목 스타일 */
         .project-title {
             font-size: 1.5em;
-            margin-top: 0.5em;
+            margin-top: 1.5em;
             margin-bottom: 0.3em;
             text-align: center; /* 작품 제목 중앙 정렬 */
         }
@@ -77,20 +79,6 @@
             text-align: center;
 
         }
-
-      /* 버튼 스타일 */
-      .button {
-        display: inline-block; /* 인라인 블록으로 변경 */
-        background-color: black;
-        color: white;
-        padding: 0.5em 1em;
-        text-decoration: none;
-        border-radius: 5px;
-        margin: 0 auto;       
-        text-align: center; /* 텍스트 가운데 정렬 */    
-      }
-
-
     </style>
 </head>
 <body>
@@ -99,30 +87,26 @@
 
     <!-- 작품 1 -->
     <div class="project-container">
-      <div class="project-iframe-container">
-
-          <iframe class="project-iframe" src="project1.html"  scrolling="no"></iframe>
-      </div>
+        <!-- a 태그로 iframe 감싸기 -->
+        <a href="project1.html"  class="project-link-container">
+            <iframe class="project-iframe" src="project1.html" scrolling="no"></iframe>
+        </a>
         <h3 class="project-title">작품 제목 1</h3>
         <p class="project-description">작품 설명 1</p>
-        <a href="project1.html" class="button">View Full Screen</a>
-
     </div>
 
     <!-- 작품 2 (예시) -->
     <div class="project-container">
-    <div class="project-iframe-container">
-        <iframe class="project-iframe" src="project2.html"  scrolling="no"></iframe>
-    </div>
+        <a href="project2.html" class="project-link-container">
+          <iframe class="project-iframe" src="project2.html" scrolling = "no"></iframe>
+        </a>
         <h3 class="project-title">작품 제목 2</h3>
         <p class="project-description">작품 설명 2</p>
-          <a href="project2.html" class="button">View Full Screen</a>
-
     </div>
 
     <!-- 추가 작품은 위와 같은 형식으로 계속 추가 -->
 
-    <script>
+     <script>
       // 모든 iframe 요소들을 가져옴
       var iframes = document.querySelectorAll('.project-iframe');
 
